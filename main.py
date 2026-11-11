@@ -572,4 +572,5 @@ async def show_events(message: Message):
         keyboard = None
         if need == 1:
             keyboard = InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="🙋‍♂️ Я хочу участвовать", callback_data=
+                InlineKeyboardButton(text="Я хочу участвовать", callback_data=...)
+                
