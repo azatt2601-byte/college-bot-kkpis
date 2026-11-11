@@ -1,4 +1,3 @@
-
 import os
 import asyncio
 import logging
@@ -21,7 +20,6 @@ bot = Bot(token=TOKEN)
 dp = Dispatcher()
 router = Router()
 
-# ==================== АНТИМАТ ФИЛЬТР ====================
 BAD_WORDS = ["мат1", "мат2", "блять", "сука", "хуй", "пизда", "ебать", "сучка"]
 
 def check_bad_words(text: str) -> bool:
@@ -33,7 +31,6 @@ def check_bad_words(text: str) -> bool:
             return True
     return False
 
-# ==================== БАЗА ДАННЫХ ====================
 def init_db():
     conn = sqlite3.connect("college_bot.db")
     cursor = conn.cursor()
@@ -157,10 +154,6 @@ def init_db():
     conn.commit()
     conn.close()
 
-# ==================== СОСТОЯНИЯ (FSM) ====================
-class RegState(StatesGroup.group):
-    pass
-
 class RegistrationFlow(StatesGroup):
     role = State()
     fio = State()
@@ -215,7 +208,6 @@ class AdminEvent(StatesGroup):
 class AdminBroadcast(StatesGroup):
     text = State()
 
-# ==================== КЛАВИАТУРЫ ====================
 def get_main_keyboard(lang="ru"):
     if lang == "kz":
         return ReplyKeyboardMarkup(
@@ -240,7 +232,6 @@ def get_main_keyboard(lang="ru"):
             resize_keyboard=True
         )
 
-# ==================== /START И РЕГИСТРАЦИЯ ====================
 @router.message(F.text == "/start")
 async def cmd_start(message: Message, state: FSMContext):
     await state.clear()
@@ -365,7 +356,6 @@ async def reg_finish(message: Message, state: FSMContext):
     await message.answer("✅ Регистрация успешно завершена!", reply_markup=get_main_keyboard(lang))
     await state.clear()
 
-# ==================== ПЕРЕЗАПУСК И СМЕНА ЯЗЫКА ====================
 @router.message(F.text.in_(["🔄 Перезапуск", "🔄 Қайта іске қосу"]))
 async def restart_bot(message: Message, state: FSMContext):
     await state.clear()
@@ -401,7 +391,6 @@ async def set_language_final(callback: CallbackQuery):
     text = "🌐 Язык изменен!" if lang == "ru" else "🌐 Тіл өзгертілді!"
     await callback.message.answer(text, reply_markup=get_main_keyboard(lang))
 
-# ==================== ПОМОЩЬ ====================
 @router.message(F.text.in_(["ℹ️ Помощь", "ℹ️ Көмек"]))
 async def help_menu(message: Message):
     text = (
@@ -414,7 +403,6 @@ async def help_menu(message: Message):
     )
     await message.answer(text, parse_mode="Markdown")
 
-# ==================== 1. МЕНЮ ====================
 @router.message(F.text == "🍽 Меню")
 async def menu_hub(message: Message):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
@@ -524,7 +512,6 @@ async def review_text(message: Message, state: FSMContext):
     fio, group = user
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
-    # Сохраняем в таблицу отзывов (создадим таблицу, если не была)
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS reviews (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -546,10 +533,9 @@ async def review_text(message: Message, state: FSMContext):
     await message.answer("✅ Спасибо! Ваш отзыв успешно сохранен.")
     await state.clear()
 
-# ==================== 2. РАСПИСАНИЕ ====================
 @router.message(F.text.in_(["📅 Расписание", "📅 Кесте"]))
 async def show_schedule(message: Message):
-    if datetime.now().weekday() == 5: # Суббота
+    if datetime.now().weekday() == 5:
         await message.answer("📅 В субботу расписание не отображается.")
         return
         
@@ -565,6 +551,25 @@ async def show_schedule(message: Message):
         
     link, photo_id = row
     if photo_id:
-        await message.answer_photo(photo_id, caption=f"📅 Актуальное расписание:\n🔗 Ссылка: {link}")
+        await message.answer_photo(photo_id, caption="📅 Актуальное расписание:\n🔗 Ссылка: " + str(link))
     else:
-        await message.answer(f"📅 Актуальное расписание:\n🔗 {
+        await message.answer("📅 Актуальное расписание:\n🔗 " + str(link))
+
+@router.message(F.text.in_(["🎉 Мероприятия", "🎉 Іс-шаралар"]))
+async def show_events(message: Message):
+    conn = sqlite3.connect("college_bot.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, title_text, photo_id, event_date, location, need_students FROM events")
+    events = cursor.fetchall()
+    conn.close()
+    
+    if not events:
+        await message.answer("🎉 Нет активных мероприятий.")
+        return
+        
+    for ev_id, title, photo, ev_date, loc, need in events:
+        text = f"🎉 **{title}**\n📅 Дата: {ev_date}\n📍 Место: {loc}"
+        keyboard = None
+        if need == 1:
+            keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="🙋‍♂️ Я хочу участвовать", callback_data=
