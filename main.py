@@ -395,7 +395,7 @@ async def set_language_final(callback: CallbackQuery):
 async def help_menu(message: Message):
     text = (
         "ℹ️ **Справочная информация и поддержка:**\n\n"
-        "💬 По всем вопросам обращайтесь к разработчику: @YourUsername\n\n"
+        "💬 По всем вопросам обращайтесь к разработчику\n\n"
         "🤖 **Часто задаваемые вопросы (FAQ):**\n"
         "• *Как зарегистрироваться?* — Нажмите /start.\n"
         "• *Почему недоступны отзывы?* — Требуется обязательная регистрация.\n"
@@ -424,7 +424,7 @@ async def show_today_menu(callback: CallbackQuery):
     conn.close()
     
     if not items:
-        await callback.message.answer("❌ На сегодня меню еще не добавлено поварами (прошлые меню автоматически скрыты).")
+        await callback.message.answer("❌ На сегодня меню еще не добавлено поварами.")
         return
         
     text = f"📋 **Меню на сегодня ({date.today().strftime('%d.%m.%Y')}):**\n\n"
@@ -492,7 +492,7 @@ async def review_rating(message: Message, state: FSMContext):
 @router.message(ReviewState.text)
 async def review_text(message: Message, state: FSMContext):
     if check_bad_words(message.text):
-        await message.answer("⚠️ ИИ-фильтр заблокировал отзыв: обнаружена нецензурная лексика. Перепишите текст:")
+        await message.answer("⚠️ Обнаружена нецензурная лексика. Перепишите текст:")
         return
         
     data = await state.get_data()
@@ -572,5 +572,7 @@ async def show_events(message: Message):
         keyboard = None
         if need == 1:
             keyboard = InlineKeyboardMarkup(inline_keyboard=[
-                InlineKeyboardButton(text="Я хочу участвовать", callback_data=...)
-                
+                [InlineKeyboardButton(text="Я хочу участвовать", callback_data=f"event_join_{ev_id}")]
+            ])
+        if photo:
+            await message.answ
